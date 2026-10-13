@@ -93,7 +93,12 @@ async def get_quotes(symbols: str = Query(default="AAPL,MSFT,NVDA,AMZN,GOOGL")) 
                     continue
                 raw_time = data.get("datetime")
                 exchange_timezone = data.get("exchange_timezone") or data.get("timezone")
-                parsed = parse_timestamp(raw_time, exchange_timezone)
+                epoch = data.get("timestamp")
+                parsed = None
+                if isinstance(epoch, (int, float)) and epoch > 0:
+                    parsed = datetime.fromtimestamp(epoch, tz=timezone.utc)
+                else:
+                    parsed = parse_timestamp(raw_time, exchange_timezone)
                 # Never allow a naive, timezone-unknown timestamp to qualify an order.
                 timestamp = parsed.isoformat() if parsed else None
                 quotes[symbol] = {
