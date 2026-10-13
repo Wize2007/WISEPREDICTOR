@@ -34,7 +34,7 @@
   function quoteAge(q) {
     if (!q || !q.timestamp) return Infinity;
     const timestamp = Date.parse(q.timestamp);
-    return Number.isFinite(timestamp) ? Math.max(0, Date.now() - timestamp) : Infinity;
+    return Number.isFinite(timestamp) && timestamp <= Date.now() + 5 * 60 * 1000 ? Math.max(0, Date.now() - timestamp) : Infinity;
   }
   function quoteUsable(q) {
     return Boolean(q && Number.isFinite(Number(q.price)) && Number(q.price) > 0 &&
