@@ -1,0 +1,9 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+node_modules/
+.DS_Store
+Thumbs.db
