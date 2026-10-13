@@ -88,7 +88,7 @@ async def get_quotes(symbols: str = Query(default="AAPL,MSFT,NVDA,AMZN,GOOGL")) 
                 )
                 response.raise_for_status()
                 data = response.json()
-                if data.get("status") == "error" or data.get("code") or not data.get("close"):
+                if data.get("status") == "error" or not data.get("close"):
                     unavailable[symbol] = str(data.get("message") or "Provider did not return a quote.")
                     continue
                 raw_time = data.get("datetime")
