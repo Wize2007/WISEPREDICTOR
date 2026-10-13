@@ -40,8 +40,8 @@
     return Boolean(q && Number.isFinite(Number(q.price)) && Number(q.price) > 0 &&
       q.status === "provider_quote" && quoteAge(q) <= 36 * 60 * 60 * 1000);
   }
-  function quoteStatus(q) {
-    if (!q) return { label: unavailable[q && q.symbol] || "Not connected", css: "missing" };
+  function quoteStatus(q, symbol) {
+    if (!q) return { label: unavailable[symbol] || "Not connected", css: "missing" };
     if (q.status === "error") return { label: "Unavailable", css: "error" };
     if (!q.timestamp || quoteAge(q) > 36 * 60 * 60 * 1000) return { label: "Stale / check time", css: "stale" };
     return { label: "Provider quote", css: "" };
@@ -63,7 +63,7 @@
     if (!body) return;
     body.innerHTML = Object.entries(instruments).map(([symbol, meta]) => {
       const q = quotes[symbol];
-      const status = quoteStatus(q);
+      const status = quoteStatus(q, symbol);
       const price = quoteUsable(q) ? money(Number(q.price), q.currency || meta.currency) : "—";
       const change = quoteUsable(q) && Number.isFinite(Number(q.change_pct)) ?
         '<span class="change-pill ' + (Number(q.change_pct) < 0 ? "down" : "") + '">' + pct(Number(q.change_pct)) + '</span>' : "—";
