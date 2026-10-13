@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timezone
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query
@@ -42,14 +43,18 @@ async def health() -> dict[str, Any]:
     }
 
 
-def parse_timestamp(raw: str | None) -> datetime | None:
+def parse_timestamp(raw: str | None, timezone_name: str | None) -> datetime | None:
     if not raw:
         return None
     try:
         value = datetime.fromisoformat(raw.replace("Z", "+00:00"))
         if value.tzinfo is None:
-            # Provider timestamps without offsets are not silently treated as UTC.
-            return None
+            if not timezone_name:
+                return None
+            try:
+                value = value.replace(tzinfo=ZoneInfo(timezone_name))
+            except ZoneInfoNotFoundError:
+                return None
         return value.astimezone(timezone.utc)
     except (TypeError, ValueError):
         return None
@@ -87,13 +92,10 @@ async def get_quotes(symbols: str = Query(default="AAPL,MSFT,NVDA,AMZN,GOOGL")) 
                     unavailable[symbol] = str(data.get("message") or "Provider did not return a quote.")
                     continue
                 raw_time = data.get("datetime")
-                timestamp = None
-                if raw_time:
-                    # Twelve Data may return exchange-local timestamps without an offset.
-                    # Keep the raw value for display; the client refuses to trade unless
-                    # the timestamp can be parsed and is recent enough.
-                    parsed = parse_timestamp(raw_time)
-                    timestamp = parsed.isoformat() if parsed else str(raw_time)
+                exchange_timezone = data.get("exchange_timezone") or data.get("timezone")
+                parsed = parse_timestamp(raw_time, exchange_timezone)
+                # Never allow a naive, timezone-unknown timestamp to qualify an order.
+                timestamp = parsed.isoformat() if parsed else None
                 quotes[symbol] = {
                     "symbol": symbol,
                     "price": float(data["close"]),
